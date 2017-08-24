@@ -77,6 +77,13 @@ void microtags_set_with_ticks(uint_fast16_t id) {
  */
 void microtags_set_with_data(uint_fast16_t id, uint_fast32_t data) {
 
+#ifndef MICROTAGS_SKIP_LENGTH_CHECK
+    /* buffer overflow protection */
+    if (microtags_n_tags_in_buffer >= microtags_buffer_length_n_tags) {
+        return;
+    }
+#endif
+
 	/* store in memory */
 	microtags_buffer[microtags_n_tags_in_buffer].data = data;
 	microtags_buffer[microtags_n_tags_in_buffer++].id = id;
