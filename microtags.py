@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import sys
+import base64
 
 
 #
@@ -109,7 +110,7 @@ class Microtag(object):
             raise Exception('Invalid code "{0}"'.format(code))
 
         # extract data and id from base64-encoded tag
-        hexCode = code.decode('base64').encode('hex')
+        hexCode = base64.b64decode(code).hex()
         self.tagData = int(hexCode[0:8], base = 16)
         self.tagId = int(hexCode[8:12], base = 16)
 
@@ -296,7 +297,7 @@ class MicrotagList(object):
         # determine length of longest string in tag id alias dictionary
         # (removing leading type definitions, if present)
         widthId = max([len(s if s.find(':') == -1 else s[s.find(':')+1:]) \
-                for s in self.idDict.values()] + [8])
+                for s in list(self.idDict.values())] + [8])
 
         # determine length of highest tag index
         widthIndex = len('{0}'.format(len(self.getAnalysedTags())))
@@ -378,7 +379,8 @@ class MicrotagList(object):
                 tag = Microtag()
                 tag.importFromCode(code)
                 self.rawTags += [tag]
-            except:
+            except Exception as e:
+                print(e)
                 pass
         # return the number of tags imported
         return len(self.rawTags) - lenBefore
@@ -406,8 +408,8 @@ def main(argv):
     if len(argv) == 1:
         filename = argv[0]
     else:
-        print "Wrong number of arguments. Stopping."
-        print "Expecting <input-file>"
+        print("Wrong number of arguments. Stopping.")
+        print("Expecting <input-file>")
         return
 
     idDict = {
@@ -423,9 +425,10 @@ def main(argv):
 
     try:
         n = microtags.importFromFile(filename)
-        print('Imported {0} microtag(s).'.format(n))
-    except:
-        print "Failed to read/parse input file. Stopping."
+        print(('Imported {0} microtag(s).'.format(n)))
+    except Exception as e:
+        print("Failed to read/parse input file. Stopping.")
+        print(e)
         return
 
     microtags.analyse()
