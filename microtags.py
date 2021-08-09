@@ -1,7 +1,8 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import sys
 import base64
+import binascii
 
 
 #
@@ -110,7 +111,7 @@ class Microtag(object):
             raise Exception('Invalid code "{0}"'.format(code))
 
         # extract data and id from base64-encoded tag
-        hexCode = base64.b64decode(code).hex()
+        hexCode = binascii.hexlify(base64.b64decode(code))
         self.tagData = int(hexCode[0:8], base = 16)
         self.tagId = int(hexCode[8:12], base = 16)
 
@@ -206,10 +207,10 @@ class MicrotagData(MicrotagUntyped):
 #
 class MicrotagList(object):
 
-    def __init__(self, idDict=None, dataToTime=None):
+    def __init__(self, dataToTime=None):
         self.rawTags = []
         self.analysedTags = None
-        self.idDict = idDict if idDict is not None else {}
+        self.tagDefDict = {}
 
         # conversion function from data (ticks) to time
         if dataToTime is not None:
@@ -245,10 +246,10 @@ class MicrotagList(object):
         # iterate over all raw microtags
         for i, tag in enumerate(self.getRawTags()):
 
-            if tag.getTagId() in self.idDict:
+            if tag.getTagId() in self.tagDefDict:
 
                 # microtag id alias from dictionary
-                idAlias = self.idDict[tag.tagId]
+                idAlias = self.tagDefDict[tag.tagId]
 
                 # extract microtag type (start, stop, event, data)
                 if idAlias.startswith('start:'):
@@ -297,7 +298,7 @@ class MicrotagList(object):
         # determine length of longest string in tag id alias dictionary
         # (removing leading type definitions, if present)
         widthId = max([len(s if s.find(':') == -1 else s[s.find(':')+1:]) \
-                for s in list(self.idDict.values())] + [8])
+                for s in list(self.tagDefDict.values())] + [8])
 
         # determine length of highest tag index
         widthIndex = len('{0}'.format(len(self.getAnalysedTags())))
@@ -372,7 +373,7 @@ class MicrotagList(object):
         if isinstance(index, int):
             return self.rawTags[index]
 
-    def importFromCodes(self, codes):
+    def importTagsFromCodes(self, codes):
         lenBefore = len(self.rawTags)
         for code in codes.split('\n'):
             try:
@@ -385,16 +386,38 @@ class MicrotagList(object):
         # return the number of tags imported
         return len(self.rawTags) - lenBefore
 
-    def importFromFile(self, filename):
+    def importTagsFromFile(self, filename):
         f = open(filename, 'r')
         lines = [line.strip() for line in f]
         codes = '\n'.join([line for line in lines
                 if len(line) == 8 and line[0] != '#'])
         f.close()
         if len(codes) > 0:
-            return self.importFromCodes(codes)
+            return self.importTagsFromCodes(codes)
         else:
             return 0
+
+    def importTagDefsFromFile(self, filename):
+        f = open(filename, 'r')
+        lines = [line.strip() for line in f]
+        tagDefs = [line for line in lines
+                if len(line) > 0 and line[0] != '#']
+        f.close()
+
+        nBefore = len(self.tagDefDict)
+
+        for tagDef in tagDefs:
+            tokens = [token.strip() for token in tagDef.split(',')]
+            if len(tokens) != 2:
+                # >>> invalid line >>>
+                continue
+            if not tokens[0].startswith('0x'):
+                # >>> invalid line >>>
+                continue
+
+            self.tagDefDict[int(tokens[0][2:], base = 16)] = tokens[1]
+
+        return len(self.tagDefDict) - nBefore
 
     def printList(self):
         pass
@@ -405,26 +428,27 @@ class MicrotagList(object):
 #
 def main(argv):
 
-    if len(argv) == 1:
-        filename = argv[0]
+    if len(argv) == 2:
+        tagDefFilename = argv[0]
+        tagsFilename = argv[1]
     else:
         print("Wrong number of arguments. Stopping.")
-        print("Expecting <input-file>")
+        print("Expecting <tag-def-file> <tag-file>")
         return
 
-    idDict = {
-        0x0000 : 'start:Direct',
-        0x0001 : 'stop:Direct',
-        0x0002 : 'start:Loop',
-        0x0003 : 'stop:Loop',
-        0x1000 : 'data:Counts'
-    }
-
     # read input file
-    microtags = MicrotagList(idDict) #, lambda c: (c / 84E6, 's', 3))
+    microtags = MicrotagList() #, lambda c: (c / 84E6, 's', 3))
 
     try:
-        n = microtags.importFromFile(filename)
+        n = microtags.importTagDefsFromFile(tagDefFilename)
+        print(('Imported {0} microtag definition(s).'.format(n)))
+    except Exception as e:
+        print("Failed to read/parse input file. Stopping.")
+        print(e)
+        return
+
+    try:
+        n = microtags.importTagsFromFile(tagsFilename)
         print(('Imported {0} microtag(s).'.format(n)))
     except Exception as e:
         print("Failed to read/parse input file. Stopping.")
