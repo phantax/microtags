@@ -350,13 +350,13 @@ class MicrotagList(object):
 
                 # matching string
                 line += '--->[ {0:{1}} ]' \
-                        .format(tag.getStopTagIndex(), widthIndex)
+                        .format(str(tag.getStopTagIndex()), widthIndex)
 
             elif isinstance(tag, MicrotagStop):
 
                 # matching string
                 line += '[ {0:{1}} ]---({2:^{3}})--->[ {4:{1}} ]' \
-                        .format(tag.getStartTagIndex(), widthIndex, tag.getIdAlias(), widthId, i)
+                        .format(str(tag.getStartTagIndex()), widthIndex, tag.getIdAlias(), widthId, i)
                 # time difference
                 line += '{0:>20}'.format(self.dataToTimeDiffStr(
                         self.getAnalysedTags()[tag.getStartTagIndex()].getTagData(), tag.getTagData()))
