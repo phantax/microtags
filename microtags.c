@@ -42,7 +42,7 @@ static int microtags_buffer_length_n_tags = 0;
 
 
 /*
- * Function to set a ticks-based microtag, i.e. write a microtag to the buffer
+ * Function to set a ticks-based microtag (writes one microtag to the buffer)
  * ___________________________________________________________________________
  */
 void microtags_init(microtag_t* buffer, int buffer_length_n_tags) {
@@ -53,7 +53,7 @@ void microtags_init(microtag_t* buffer, int buffer_length_n_tags) {
 
 
 /*
- * Function to set a ticks-based microtag, i.e. write a microtag to the buffer
+ * Function to set a ticks-based microtag (writes one microtag to the buffer)
  * ___________________________________________________________________________
  */
 void microtags_set_with_ticks(uint_fast16_t id) {
@@ -72,7 +72,7 @@ void microtags_set_with_ticks(uint_fast16_t id) {
 
 
 /*
- * Function to set a data-based microtag, i.e. write a microtag to the buffer
+ * Function to set a data-based microtag (writes one microtag to the buffer)
  * ___________________________________________________________________________
  */
 void microtags_set_with_data(uint_fast16_t id, uint_fast32_t data) {
@@ -87,6 +87,31 @@ void microtags_set_with_data(uint_fast16_t id, uint_fast32_t data) {
 	/* store in memory */
 	microtags_buffer[microtags_n_tags_in_buffer].data = data;
 	microtags_buffer[microtags_n_tags_in_buffer++].id = id;
+}
+
+
+/*
+ * Function to set a data-based microtag with variable-length data (writes one or more microtags to the buffer)
+ * ___________________________________________________________________________
+ */
+void microtags_set_with_vardata(uint_fast16_t id, uint8_t* data, uint_fast8_t length) {
+
+    // Write data length in first byte of first tag
+    uint_fast32_t tag_data = (uint_fast32_t)length << 24;
+
+    for (uint_fast8_t i = 0; i <= length; i++) {
+        if (i < length) {
+            // Write a single byte
+            tag_data |= ((uint_fast32_t)(data[i]) << 8*(3 - ((i + 1) % 4)));
+        }
+        if ((((i + 2) % 4) == 0 && (i < length)) 
+                || (length == 0) 
+                || ((i + 1) == length)) {
+            // Write a new data tag
+            microtags_set_with_data(id, tag_data);
+            tag_data = 0;
+        }
+    }
 }
 
 

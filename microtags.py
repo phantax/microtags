@@ -205,6 +205,57 @@ class MicrotagData(MicrotagUntyped):
 #
 # _____________________________________________________________________________
 #
+class MicrotagVarData(MicrotagData):
+
+    def __init__(self, tag=None, idAlias=None):
+        MicrotagData.__init__(self, tag, idAlias)
+        self.previous = None
+        self.length = None
+        self.data = None
+        self.isLast = False
+
+    def setPrevious(self, previous):
+        self.previous = previous
+
+    def getIndex(self):
+        if self.previous is None:
+            return 0
+        else:
+            return self.previous.getIndex() + 1
+
+    def getLength(self):
+        if self.previous is None:
+            return self.length
+        else:
+            return self.previous.getLength()
+
+    def setIsLast(self, isLast):
+        self.isLast = isLast
+
+    def getIsLast(self):
+        return self.isLast
+
+    def getData(self):
+        if self.previous is None:
+            return self.data
+        else:
+            return self.previous.getData() + self.data
+
+    def processVarData(self):
+        if self.getIndex() == 0:
+            self.length = (self.getTagData() & 0xFF000000) >> 24
+            self.data = (self.getTagData() & 0x00FFFFFF) \
+                    .to_bytes(3, byteorder='big')[:self.length]
+        else:
+            self.data = self.getTagData().to_bytes(4, byteorder='big') \
+                    [:self.getLength() - 4*self.getIndex()]
+            if self.getLength() - 4*self.getIndex() < 4:
+                self.setIsLast(True)
+
+
+#
+# _____________________________________________________________________________
+#
 class MicrotagList(object):
 
     def __init__(self, dataToTime=None):
@@ -260,6 +311,8 @@ class MicrotagList(object):
                     analysedTag = MicrotagEvent(tag, idAlias[6:])
                 elif idAlias.startswith('data:'):
                     analysedTag = MicrotagData(tag, idAlias[5:])
+                elif idAlias.startswith('vardata:'):
+                    analysedTag = MicrotagVarData(tag, idAlias[8:])
                 else:
                     analysedTag = MicrotagUntyped(tag, idAlias)
 
@@ -285,6 +338,18 @@ class MicrotagList(object):
                     analysedTag.setStartTagIndex(matchingStarts[0])
                     self.getAnalysedTags()[matchingStarts[0]].setStopTagIndex(i)
 
+            elif isinstance(analysedTag, MicrotagVarData):
+    
+                previousTag = None
+                if len(self.getAnalysedTags()) > 0:
+                    previousTag = self.getAnalysedTags()[-1]
+                if isinstance(previousTag, MicrotagVarData) and \
+                        previousTag.getIdAlias() == analysedTag.getIdAlias() and \
+                        not previousTag.getIsLast():
+                    analysedTag.setPrevious(previousTag)
+
+                analysedTag.processVarData()
+
             self.analysedTags += [analysedTag]
 
     def __len__(self):
@@ -298,7 +363,7 @@ class MicrotagList(object):
         # determine length of longest string in tag id alias dictionary
         # (removing leading type definitions, if present)
         widthId = max([len(s if s.find(':') == -1 else s[s.find(':')+1:]) \
-                for s in list(self.tagDefDict.values())] + [8])
+                for s in list(self.tagDefDict.values())] + [8]) + 4
 
         # determine length of highest tag index
         widthIndex = len('{0}'.format(len(self.getAnalysedTags())))
@@ -323,6 +388,10 @@ class MicrotagList(object):
                 tagType = '!'
                 idAlias = TextFormatter.makeBoldYellow('{0:{1}}' \
                         .format(tag.getIdAlias(), widthId + 2))
+            elif isinstance(tag, MicrotagVarData):
+                tagType = 'V'
+                idAlias = TextFormatter.makeBoldBlue('{0:{1}}' \
+                        .format('{0}<{1}>'.format(tag.getIdAlias(), tag.getIndex()), widthId + 2))
             elif isinstance(tag, MicrotagData):
                 tagType = 'D'
                 idAlias = TextFormatter.makeBoldBlue('{0:{1}}' \
@@ -340,10 +409,15 @@ class MicrotagList(object):
             # ===== tag content, i.e. time or data =====  
 
             if isinstance(tag, MicrotagTickBased):
-                line += '{0:>20}  '.format(self.dataToTimeStr(tag.tagData))
+                line += '{0:>25}  '.format(self.dataToTimeStr(tag.tagData))
+            elif isinstance(tag, MicrotagVarData):
+                if tag.getIsLast():
+                    hexVal = ''.join(['{0:02X}'.format(b) for b in tag.getData()])
+                    line += TextFormatter.makeBoldBlue('[ 0x{0} ]'.format(hexVal))
+                else:
+                    line += TextFormatter.makeBoldBlue('...')
             else:
-                line += TextFormatter.makeBoldBlue('{0:>20}  ' \
-                        .format('[ 0x{0:08X} ]  '.format(tag.tagData)))
+                line += TextFormatter.makeBoldBlue('[ 0x{0:08X} ]  '.format(tag.tagData))
         
             # ===== start/stop tag matching =====  
         
