@@ -6,7 +6,8 @@ import binascii
 import microtags
 import matplotlib
 import math
-import random
+import numpy as np
+from scipy import optimize
 
 
 #
@@ -72,11 +73,13 @@ def main(argv):
                 if name in data:
                     # >>> New point in existing dataset >>>
                     if x in data[name]:
+                        # >>> New point at existing x value >>>
                         data[name][x] = (
                                 data[name][x][0] + y, 
                                 data[name][x][1] + y**2, 
                                 data[name][x][2] + 1)
                     else:
+                        # >>> New point at new x value >>>
                         data[name][x] = (y, y**2, 1)
                 else:
                     # >>> New point opens new dataset >>>
@@ -107,6 +110,19 @@ def main(argv):
         plot.scatter(X, Y, 2)
         plot.plot(X, Y, label=name)
         plot.fill_between(X, Yvardown, Yvarup, color='lightgrey')
+
+        if True:
+        
+            # Linear fit
+            B = lambda x, m, c: m*x + c
+
+            Xnp = np.array(X)
+            Ynp = np.array(Y)
+
+            #params = [max(Ymean), 1E-5]
+            params, params_covariance = optimize.curve_fit(B, X, Y, p0=[0., 0.])
+
+            print(' -> fit: m = {0:.2f} {1}/byte, c = {2:.2f}'.format(params[0], yLabel, params[1]))
 
     plot.legend()
 
