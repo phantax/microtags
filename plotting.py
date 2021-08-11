@@ -53,6 +53,10 @@ def main(argv):
                     name = 'AES-GMAC-128'
                 elif stateVec == (0x30, 0):  # BenchRun in [0 .. ]
                     name = 'ChaCha20-Poly1305'
+                elif stateVec == (0x31, 0):
+                    name = 'ChaCha20-Poly1305-initial-run'
+                elif stateVec == (0x31, 1):  # BenchRun in [1 .. ]
+                    name = 'ChaCha20-Poly1305-followup-run'
                 else:
                     continue
 
