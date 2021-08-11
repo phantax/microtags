@@ -72,11 +72,7 @@ def main(argv):
         plot.scatter(data[name][1], data[name][2], 2)
         plot.plot(data[name][1], data[name][2], label=name)
 
-    legend = plot.legend(frameon=1, bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
-           mode="expand", ncol=3, borderaxespad=0., prop={'size': 18})
-    frame = legend.get_frame()
-    frame.set_facecolor('white')
-    frame.set_edgecolor('black')
+    plot.legend()
 
     xmin, xmax = plot.xlim()
     plot.xlim(0., xmax)
@@ -86,6 +82,11 @@ def main(argv):
 
     plot.xlabel(r'Payload Size')
     plot.ylabel(r'Ticks')
+
+    plot.grid(which='major', color='#DDDDDD', linewidth=0.9)
+    plot.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.7)
+    plot.minorticks_on()
+    plot.title("STM32 @100 MHz, mbedTLS 2.16.2")
 
     plot.show()
 
