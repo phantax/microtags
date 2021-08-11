@@ -51,6 +51,8 @@ def main(argv):
                     name = 'HMAC-SHA256-followup-run'
                 elif stateVec == (0x20, 0):  # BenchRun in [0 .. ]
                     name = 'AES-GMAC-128'
+                elif stateVec == (0x30, 0):  # BenchRun in [0 .. ]
+                    name = 'ChaCha20-Poly1305'
                 else:
                     continue
 
@@ -63,11 +65,11 @@ def main(argv):
                     data[name] = (name, [x], [y])
 
     for name in data:
-        plot.scatter(data[name][1], data[name][2], 2, label=name)
-        plot.plot(data[name][1], data[name][2])
+        plot.scatter(data[name][1], data[name][2], 2)
+        plot.plot(data[name][1], data[name][2], label=name)
 
     legend = plot.legend(frameon=1, bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
-           mode="expand", ncol=2, borderaxespad=0., prop={'size': 18})
+           mode="expand", ncol=3, borderaxespad=0., prop={'size': 18})
     frame = legend.get_frame()
     frame.set_facecolor('white')
     frame.set_edgecolor('black')
