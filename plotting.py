@@ -56,7 +56,7 @@ def main(argv):
                     name = 'ChaCha20-Poly1305'
                 elif stateVec == (0x31, 0):
                     name = 'ChaCha20-Poly1305-initial-run'
-                elif stateVec == (0x31, 1):  # BenchRun in [1 .. ]
+                elif stateVec[0] == 0x31 and stateVec[1] > 0:
                     name = 'ChaCha20-Poly1305-followup-run'
                 else:
                     continue
