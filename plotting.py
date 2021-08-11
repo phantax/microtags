@@ -19,6 +19,11 @@ def main(argv):
 
     microtagList = microtags.main(argv)
 
+    yScale = 1. / 50.
+    yLabel = 'Microseconds'
+    #yScale = 1.
+    #yLabel = 'Ticks'
+
     stateTags = ['BenchNum', 'BenchSize', 'BenchRun', 'BenchVariant']
     plotTags = ['Benchmark']
 
@@ -92,9 +97,9 @@ def main(argv):
             yerr = math.sqrt( (ysum2 - ysum**2 / n) / (n - 1) ) if n > 1 else 0.
 
             X += [x]
-            Y += [y]
-            Yvardown += [y - yerr]
-            Yvarup += [y + yerr]
+            Y += [y * yScale]
+            Yvardown += [(y - yerr) * yScale]
+            Yvarup += [(y + yerr) * yScale]
 
         print('Plotting {0} with {1} constribution(s)'.format(name, 
                 str(set([v[2] for v in data[name].values()]))))
@@ -112,7 +117,7 @@ def main(argv):
 
 
     plot.xlabel(r'Payload Size')
-    plot.ylabel(r'Ticks')
+    plot.ylabel(yLabel)
 
     plot.grid(which='major', color='#DDDDDD', linewidth=0.9)
     plot.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.7)
