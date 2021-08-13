@@ -64,6 +64,12 @@ def main(argv):
                     name = 'ChaCha20-Poly1305-initial-run'
                 elif stateVec[0] == 0x31 and stateVec[1] > 0:
                     name = 'ChaCha20-Poly1305-followup-run'
+                elif stateVec[0] == 0x40:
+                    name = 'SHA3'
+                elif stateVec[0] == 0x50:
+                    name = 'KMAC'
+                elif stateVec[0] == 0x60:
+                    name = 'SipHash'
                 else:
                     continue
 
