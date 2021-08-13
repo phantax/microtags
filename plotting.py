@@ -64,6 +64,12 @@ def main(argv):
                     name = 'ChaCha20-Poly1305-initial-run'
                 elif stateVec[0] == 0x31 and stateVec[1] > 0:
                     name = 'ChaCha20-Poly1305-followup-run'
+                elif stateVec[0] == 0x40:
+                    name = 'SHA3'
+                elif stateVec[0] == 0x50:
+                    name = 'KMAC'
+                elif stateVec[0] == 0x60:
+                    name = 'SipHash'
                 else:
                     continue
 
@@ -138,7 +144,7 @@ def main(argv):
     plot.grid(which='major', color='#DDDDDD', linewidth=0.9)
     plot.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.7)
     plot.minorticks_on()
-    plot.title("STM32 @100 MHz, mbedTLS 2.16.2")
+    plot.title("ARM Cortex-M4, STM32F429 @100 MHz, mbedTLS 2.16.2")
 
     plot.show()
 
