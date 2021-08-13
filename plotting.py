@@ -1,11 +1,13 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import sys
 import base64
 import binascii
 import microtags
 import matplotlib
-
+import math
+import numpy as np
+from scipy import optimize
 
 
 #
@@ -18,12 +20,17 @@ def main(argv):
 
     microtagList = microtags.main(argv)
 
+    yScale = 1. / 50.
+    yLabel = 'Microseconds'
+    #yScale = 1.
+    #yLabel = 'Ticks'
+
     stateTags = ['BenchNum', 'BenchSize', 'BenchRun', 'BenchVariant']
     plotTags = ['Benchmark']
 
     state = {}
 
-    # key -> (name, X, Y)
+    # data: name -> (x value -> (Ysum, Ysum2, N))
     data = {}
 
     for tag in microtagList.analysedTags:
@@ -47,30 +54,75 @@ def main(argv):
                     name = 'HMAC-SHA256'
                 elif stateVec == (0x11, 0):
                     name = 'HMAC-SHA256-initial-run'
-                elif stateVec == (0x11, 1):  # BenchRun in [1 .. ]
+                elif stateVec[0] == 0x11 and stateVec[1] > 0:
                     name = 'HMAC-SHA256-followup-run'
-                elif stateVec == (0x20, 0):  # BenchRun in [0 .. ]
+                elif stateVec[0] == 0x20:
                     name = 'AES-GMAC-128'
-                elif stateVec == (0x30, 0):  # BenchRun in [0 .. ]
+                elif stateVec[0] == 0x30:
                     name = 'ChaCha20-Poly1305'
                 elif stateVec == (0x31, 0):
                     name = 'ChaCha20-Poly1305-initial-run'
-                elif stateVec == (0x31, 1):  # BenchRun in [1 .. ]
+                elif stateVec[0] == 0x31 and stateVec[1] > 0:
                     name = 'ChaCha20-Poly1305-followup-run'
                 else:
                     continue
 
-                x = [state['BenchSize']]
-                y = [tag.getTagData() - microtagList.getAnalysedTags()[tag.getStartTagIndex()].getTagData()]
+                x = state['BenchSize']
+                y = tag.getTagData() - microtagList.getAnalysedTags()[tag.getStartTagIndex()].getTagData()
 
                 if name in data:
-                    data[name] = (name, data[name][1] + [x], data[name][2] + [y])
+                    # >>> New point in existing dataset >>>
+                    if x in data[name]:
+                        # >>> New point at existing x value >>>
+                        data[name][x] = (
+                                data[name][x][0] + y, 
+                                data[name][x][1] + y**2, 
+                                data[name][x][2] + 1)
+                    else:
+                        # >>> New point at new x value >>>
+                        data[name][x] = (y, y**2, 1)
                 else:
-                    data[name] = (name, [x], [y])
+                    # >>> New point opens new dataset >>>
+                    data[name] = { x: (y, y**2, 1) }
 
     for name in data:
-        plot.scatter(data[name][1], data[name][2], 2)
-        plot.plot(data[name][1], data[name][2], label=name)
+        X = []
+        Y = []
+        Yvardown = []
+        Yvarup = []
+
+        for x in sorted(data[name].keys()):
+            ysum = data[name][x][0]
+            ysum2 = data[name][x][1]
+            n = data[name][x][2]
+ 
+            y = ysum / n
+            yerr = math.sqrt( (ysum2 - ysum**2 / n) / (n - 1) ) if n > 1 else 0.
+
+            X += [x]
+            Y += [y * yScale]
+            Yvardown += [(y - yerr) * yScale]
+            Yvarup += [(y + yerr) * yScale]
+
+        print('Plotting {0} with {1} constribution(s)'.format(name, 
+                str(set([v[2] for v in data[name].values()]))))
+
+        plot.scatter(X, Y, 2)
+        plot.plot(X, Y, label=name)
+        plot.fill_between(X, Yvardown, Yvarup, color='lightgrey')
+
+        if True:
+        
+            # Linear fit
+            B = lambda x, m, c: m*x + c
+
+            Xnp = np.array(X)
+            Ynp = np.array(Y)
+
+            #params = [max(Ymean), 1E-5]
+            params, params_covariance = optimize.curve_fit(B, X, Y, p0=[0., 0.])
+
+            print(' -> fit: m = {0:.2f} {1}/byte, c = {2:.2f}'.format(params[0], yLabel, params[1]))
 
     plot.legend()
 
@@ -81,7 +133,7 @@ def main(argv):
 
 
     plot.xlabel(r'Payload Size')
-    plot.ylabel(r'Ticks')
+    plot.ylabel(yLabel)
 
     plot.grid(which='major', color='#DDDDDD', linewidth=0.9)
     plot.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.7)
