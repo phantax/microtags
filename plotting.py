@@ -25,7 +25,7 @@ def main(argv):
     #yScale = 1.
     #yLabel = 'Ticks'
 
-    stateTags = ['BenchNum', 'BenchSize', 'BenchRun', 'BenchVariant']
+    stateTags = ['BenchNum', 'BenchSize', 'BenchRun', 'BenchVariant', 'ComprRounds', 'FinalRounds']
     plotTags = ['Benchmark']
 
     state = {}
@@ -69,9 +69,9 @@ def main(argv):
                 elif stateVec[0] == 0x50:
                     name = 'KMAC'
                 elif stateVec[0] == 0x60:
-                    name = 'SipHash-2-4-64'
+                    name = 'SipHash-{}-{}-64'.format(state['ComprRounds'], state['FinalRounds'])
                 elif stateVec[0] == 0x61:
-                    name = 'SipHash-2-4-128'
+                    name = 'SipHash-{}-{}-128'.format(state['ComprRounds'], state['FinalRounds'])
                 else:
                     continue
 
