@@ -69,7 +69,9 @@ def main(argv):
                 elif stateVec[0] == 0x50:
                     name = 'KMAC'
                 elif stateVec[0] == 0x60:
-                    name = 'SipHash'
+                    name = 'SipHash-2-4-64'
+                elif stateVec[0] == 0x61:
+                    name = 'SipHash-2-4-128'
                 else:
                     continue
 
