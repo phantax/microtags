@@ -144,7 +144,7 @@ def main(argv):
     plot.grid(which='major', color='#DDDDDD', linewidth=0.9)
     plot.grid(which='minor', color='#EEEEEE', linestyle=':', linewidth=0.7)
     plot.minorticks_on()
-    plot.title("ARM Cortext-M4, STM32F429 @100 MHz, mbedTLS 2.16.2")
+    plot.title("ARM Cortex-M4, STM32F429 @100 MHz, mbedTLS 2.16.2")
 
     plot.show()
 
