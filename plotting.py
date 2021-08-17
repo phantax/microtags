@@ -76,7 +76,12 @@ def main(argv):
                     continue
 
                 x = state['BenchSize']
-                y = tag.getTagData() - microtagList.getAnalysedTags()[tag.getStartTagIndex()].getTagData()
+                end_time = tag.getTagData()
+                start_time = microtagList.getAnalysedTags()[tag.getStartTagIndex()].getTagData()
+                if end_time >= start_time:
+                    y = end_time - start_time
+                else:
+                    y = (end_time + 0xFFFFFFFF) - start_time
 
                 if name in data:
                     # >>> New point in existing dataset >>>
