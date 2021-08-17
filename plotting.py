@@ -57,13 +57,17 @@ def main(argv):
                 elif stateVec[0] == 0x11 and stateVec[1] > 0:
                     name = 'HMAC-SHA256-followup-run'
                 elif stateVec[0] == 0x20:
-                    name = 'AES-GMAC-128'
+                    name = 'AES-128-GMAC (AO)'
+                elif stateVec[0] == 0x28:
+                    name = 'AES-128-GCM (AE)'
                 elif stateVec[0] == 0x30:
-                    name = 'ChaCha20-Poly1305'
+                    name = 'ChaCha20-Poly1305 (AO)'
                 elif stateVec == (0x31, 0):
                     name = 'ChaCha20-Poly1305-initial-run'
                 elif stateVec[0] == 0x31 and stateVec[1] > 0:
                     name = 'ChaCha20-Poly1305-followup-run'
+                elif stateVec[0] == 0x38:
+                    name = 'ChaCha20-Poly1305 (AE)'
                 elif stateVec[0] == 0x40:
                     name = 'SHA3'
                 elif stateVec[0] == 0x50:
