@@ -58,8 +58,12 @@ def main(argv):
                     name = 'HMAC-SHA256-followup-run'
                 elif stateVec[0] == 0x20:
                     name = 'AES-128-GMAC (AO)'
+                elif stateVec[0] == 0x21:
+                    name = 'AES-256-GMAC (AO)'
                 elif stateVec[0] == 0x28:
                     name = 'AES-128-GCM (AE)'
+                elif stateVec[0] == 0x29:
+                    name = 'AES-256-GCM (AE)'
                 elif stateVec[0] == 0x30:
                     name = 'ChaCha20-Poly1305 (AO)'
                 elif stateVec == (0x31, 0):
